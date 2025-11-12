@@ -76,7 +76,7 @@ public static class SpecificationBuilderExtensions
             }
         }
 
-        return new OrderedSpecificationBuilder<T>(specificationBuilder.Specification);
+        return (IOrderedSpecificationBuilder<T>)specificationBuilder;
     }
 
     private static void AddSearchPropertyByKeyword<T>(
@@ -143,7 +143,7 @@ public static class SpecificationBuilderExtensions
                 .Add(new WhereExpressionInfo<T>(Expression.Lambda<Func<T, bool>>(binaryExpresioFilter, parameter)));
         }
 
-        return new OrderedSpecificationBuilder<T>(specificationBuilder.Specification);
+        return (IOrderedSpecificationBuilder<T>)specificationBuilder;
     }
 
     private static Expression CreateFilterExpression(
@@ -328,7 +328,7 @@ public static class SpecificationBuilderExtensions
             }
         }
 
-        return new OrderedSpecificationBuilder<T>(specificationBuilder.Specification);
+        return (IOrderedSpecificationBuilder<T>)specificationBuilder;
     }
 
     private static Dictionary<string, OrderTypeEnum> ParseOrderBy(string[] orderByFields) =>
