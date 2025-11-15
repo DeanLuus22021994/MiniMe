@@ -12,15 +12,25 @@ public static class ConfirmEmailEndpoint
     internal static RouteHandlerBuilder MapConfirmEmailEndpoint(this IEndpointRouteBuilder endpoints)
     {
         return endpoints.MapGet("/confirm-email", async (
-            [FromQuery] string userId,
-            [FromQuery] string code,
+            [FromQuery] string? userId,
+            [FromQuery] string? code,
             [FromHeader(Name = TenantConstants.Identifier)] string tenant,
             IUserService userService,
             CancellationToken cancellationToken) =>
         {
-            if (string.IsNullOrWhiteSpace(userId) || string.IsNullOrWhiteSpace(code))
+            if (string.IsNullOrWhiteSpace(userId))
             {
-                return Results.BadRequest("User Id and Code are required.");
+                return Results.BadRequest("User Id is required.");
+            }
+
+            if (string.IsNullOrWhiteSpace(code))
+            {
+                return Results.BadRequest("Confirmation code is required.");
+            }
+
+            if (string.IsNullOrWhiteSpace(tenant))
+            {
+                return Results.BadRequest("Tenant is required.");
             }
 
             var result = await userService.ConfirmEmailAsync(userId, code, tenant, cancellationToken);

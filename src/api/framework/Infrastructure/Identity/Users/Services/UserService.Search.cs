@@ -1,6 +1,9 @@
+using System.Globalization;
+using System.Linq.Expressions;
 using FSH.Framework.Core.Identity.Users.Dtos;
 using FSH.Framework.Core.Identity.Users.Features.SearchUsers;
 using FSH.Framework.Core.Paging;
+using FSH.Framework.Infrastructure.Identity.Users;
 using Mapster;
 using Microsoft.EntityFrameworkCore;
 
@@ -17,11 +20,11 @@ internal sealed partial class UserService
         // Apply keyword search
         if (!string.IsNullOrWhiteSpace(request.Keyword))
         {
-            var keyword = request.Keyword.ToLower();
+            var keyword = request.Keyword.ToLower(CultureInfo.InvariantCulture);
             query = query.Where(u =>
-                u.FirstName!.ToLower().Contains(keyword) ||
-                u.LastName!.ToLower().Contains(keyword) ||
-                u.Email!.ToLower().Contains(keyword) ||
+                (u.FirstName != null && u.FirstName.ToLower().Contains(keyword)) ||
+                (u.LastName != null && u.LastName.ToLower().Contains(keyword)) ||
+                (u.Email != null && u.Email.ToLower().Contains(keyword)) ||
                 (u.PhoneNumber != null && u.PhoneNumber.Contains(keyword)));
         }
 
@@ -37,21 +40,38 @@ internal sealed partial class UserService
         // Apply ordering
         if (request.OrderBy?.Any() == true)
         {
+            IOrderedQueryable<FshUser>? orderedQuery = null;
+
             foreach (var orderBy in request.OrderBy)
             {
                 var isDescending = orderBy.StartsWith('-');
                 var propertyName = isDescending ? orderBy[1..] : orderBy;
 
-                query = propertyName.ToLower() switch
+                Expression<Func<FshUser, object?>> keySelector = propertyName.ToLower(CultureInfo.InvariantCulture) switch
                 {
-                    "firstname" => isDescending ? query.OrderByDescending(u => u.FirstName) : query.OrderBy(u => u.FirstName),
-                    "lastname" => isDescending ? query.OrderByDescending(u => u.LastName) : query.OrderBy(u => u.LastName),
-                    "email" => isDescending ? query.OrderByDescending(u => u.Email) : query.OrderBy(u => u.Email),
-                    "phonenumber" => isDescending ? query.OrderByDescending(u => u.PhoneNumber) : query.OrderBy(u => u.PhoneNumber),
-                    "isactive" => isDescending ? query.OrderByDescending(u => u.IsActive) : query.OrderBy(u => u.IsActive),
-                    _ => query
+                    "firstname" => u => u.FirstName,
+                    "lastname" => u => u.LastName,
+                    "email" => u => u.Email,
+                    "phonenumber" => u => u.PhoneNumber,
+                    "isactive" => u => u.IsActive,
+                    _ => u => u.Email // Default to email
                 };
+
+                if (orderedQuery == null)
+                {
+                    orderedQuery = isDescending 
+                        ? query.OrderByDescending(keySelector) 
+                        : query.OrderBy(keySelector);
+                }
+                else
+                {
+                    orderedQuery = isDescending 
+                        ? orderedQuery.ThenByDescending(keySelector) 
+                        : orderedQuery.ThenBy(keySelector);
+                }
             }
+
+            query = orderedQuery ?? query;
         }
         else
         {

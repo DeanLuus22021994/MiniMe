@@ -11,13 +11,18 @@ public static class ConfirmPhoneNumberEndpoint
     internal static RouteHandlerBuilder MapConfirmPhoneNumberEndpoint(this IEndpointRouteBuilder endpoints)
     {
         return endpoints.MapGet("/confirm-phone-number", async (
-            [FromQuery] string userId,
-            [FromQuery] string code,
+            [FromQuery] string? userId,
+            [FromQuery] string? code,
             IUserService userService) =>
         {
-            if (string.IsNullOrWhiteSpace(userId) || string.IsNullOrWhiteSpace(code))
+            if (string.IsNullOrWhiteSpace(userId))
             {
-                return Results.BadRequest("User Id and Code are required.");
+                return Results.BadRequest("User Id is required.");
+            }
+
+            if (string.IsNullOrWhiteSpace(code))
+            {
+                return Results.BadRequest("Confirmation code is required.");
             }
 
             var result = await userService.ConfirmPhoneNumberAsync(userId, code);

@@ -30,7 +30,12 @@ public static class UploadFileEndpoint
             var fileType = DetermineFileType(command.Extension);
             var uri = await storageService.UploadAsync<object>(command, fileType, cancellationToken);
             
-            return Results.Ok(new FileUploadResponse { Url = uri! });
+            if (uri == null)
+            {
+                return Results.BadRequest("File upload failed.");
+            }
+            
+            return Results.Ok(new FileUploadResponse { Url = uri });
         })
         .WithName(nameof(UploadFileEndpoint))
         .WithSummary("Upload a file")
@@ -40,7 +45,37 @@ public static class UploadFileEndpoint
 
     private static FileType DetermineFileType(string extension)
     {
-        var imageExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".svg", ".webp" };
-        return imageExtensions.Contains(extension.ToLowerInvariant()) ? FileType.Image : FileType.Other;
+        if (string.IsNullOrWhiteSpace(extension))
+        {
+            return FileType.Other;
+        }
+
+        var lowerExtension = extension.ToLowerInvariant();
+
+        // Image files
+        if (new[] { ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".svg", ".webp" }.Contains(lowerExtension))
+        {
+            return FileType.Image;
+        }
+
+        // Document files
+        if (new[] { ".pdf", ".doc", ".docx", ".txt", ".xlsx", ".xls", ".csv" }.Contains(lowerExtension))
+        {
+            return FileType.Document;
+        }
+
+        // Video files
+        if (new[] { ".mp4", ".avi", ".mov", ".wmv", ".flv", ".mkv" }.Contains(lowerExtension))
+        {
+            return FileType.Video;
+        }
+
+        // Audio files
+        if (new[] { ".mp3", ".wav", ".flac", ".aac", ".ogg" }.Contains(lowerExtension))
+        {
+            return FileType.Audio;
+        }
+
+        return FileType.Other;
     }
 }
