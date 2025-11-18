@@ -17,6 +17,7 @@ using FSH.Framework.Infrastructure.OpenApi;
 using FSH.Framework.Infrastructure.Persistence;
 using FSH.Framework.Infrastructure.RateLimit;
 using FSH.Framework.Infrastructure.SecurityHeaders;
+using FSH.Framework.Infrastructure.Storage.Endpoints;
 using FSH.Framework.Infrastructure.Storage.Files;
 using FSH.Framework.Infrastructure.Tenant;
 using FSH.Framework.Infrastructure.Tenant.Endpoints;
@@ -95,6 +96,7 @@ public static class Extensions
         app.UseAuthorization();
         app.MapTenantEndpoints();
         app.MapIdentityEndpoints();
+        app.MapStorageEndpoints();
 
         // Current user middleware
         app.UseMiddleware<CurrentUserMiddleware>();
